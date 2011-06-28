@@ -35,7 +35,7 @@ db.calendar.IntervalPlotter = ( function($){
 	  continue;
 	 }
 	 if (
-	 (event.start >= calEvent.start && event.start <= calEvent.end) ||
+	 (event.start >= calEvent.start && event.start < calEvent.end) ||
 	  (event.start < calEvent.start && event.end > calEvent.start)
 	) {
 	  isOverlap = true;
@@ -47,23 +47,56 @@ db.calendar.IntervalPlotter = ( function($){
 	 revertFunc();
 	}
    },
+	 
+	 getEvents : function() {
+		return self.getCalendar().fullCalendar("clientEvents");
+	 },
+	 
+	 getJsonFriendlyIntervals : function() {
+		 var events = [];
+		 $.each(self.getEvents(), function(i, event) {
+			 events.push({
+				 label : event.title,
+				 start : event.start.getTime(),
+				 end : event.end.getTime()
+			 })
+		 });
+		 return events;
+	 },
 
-   getEvents : function() {
-	return self.getCalendar().fullCalendar("clientEvents");
+   getIntervalsObject : function() {
+		return {
+			action : "updateIntervals",
+			owner : params.user,
+			intervals : self.getJsonFriendlyIntervals()
+		};
    },
+	 
+	 saveIntervals : function(event) {
+		 event.preventDefault();
+		 $.ajax({
+			 url : params.actionPath + "/CalendarAdmin.action",
+			 type : "post",
+			 success : AjaxMessages.displayMessages,
+			 data : {
+				 _eventName : "saveIntervals",
+				 intervalJson : JSON.stringify(self.getIntervalsObject())
+			 }
+		 })
+	 },
    
    getBaseDate : function() {
-	return BASE_DATE;
+		return BASE_DATE;
    },
 
    getCalendar : function() {
-	if (params.getCalendar) {
-	 return params.getCalendar();
-	}
-	return null;
-   }
-   
-  }
-  return self;
- };
+		if (params.getCalendar) {
+		 return params.getCalendar();
+		}
+		return null;
+		 }
+
+		}
+		return self;
+	 };
 }(jQuery) )
